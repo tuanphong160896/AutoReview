@@ -1,0 +1,78 @@
+#
+# Cantata Test-Level Options
+#
+# Any options set in this file will override the options set in the
+# project-level options file.
+#
+# WARNING: Do not alter this file manually.
+#
+#tool.testid=f2b73261-8664-4586-b804-e7292a3a4ca8
+"--ci:--instr:stmt;func;rel;loop;call;decn;log;"
+"--sm:--access_variable:"Dem_DebBase.c":Dem_Cfg_DebCounterBaseClass_Paramsets"
+"--sm:--isolate:Dem_DtcGroupIdIsValid(Dem_DTCGroupIdType)#Dem_DtcIdListIteratorNewFromDtcGroup(Dem_DtcIdListIterator *,Dem_DTCGroupIdType )"
+"--sm:--isolate:Dem_J1939IsNodeIdValid(Dem_J1939NodeIdType)#Dem_J1939DtcIdListIteratorNewFromJ1939NodeID(Dem_DtcIdListIterator2 *,Dem_J1939NodeIdType )"
+"--sm:--isolate:Dem_isDtcIdValid(Dem_DtcIdType)#Dem_EventIdListIteratorNewFromDtcId(Dem_EventIdListIterator *,Dem_DtcIdType )"
+"--sm:--isolate:Dem_isDtcIdValid(Dem_DtcIdType)#Dem_J1939NodeIdListIteratorNewFromDtcId(Dem_J1939NodeIdListIterator *,Dem_DtcIdType )"
+"--sm:--isolate:rba_DiagLib_Bit16ClearBit(uint16 *, uint8)#rba_DiagLib_Bit16OverwriteBit(uint16 *,uint8 ,boolean )"
+"--sm:--isolate:rba_DiagLib_Bit16ClearBits(uint16 *, uint8, uint8)#rba_DiagLib_Bit16OverwriteBits(uint16 *,uint8 ,uint8 ,uint16 )"
+"--sm:--isolate:rba_DiagLib_Bit16SetBit(uint16 *, uint8)#rba_DiagLib_Bit16OverwriteBit(uint16 *,uint8 ,boolean )"
+"--sm:--isolate:rba_DiagLib_Bit32ClearBit(uint32 *, uint8)#rba_DiagLib_Bit32OverwriteBit(uint32 *,uint8 ,boolean )"
+"--sm:--isolate:rba_DiagLib_Bit32ClearBits(uint32 *, uint8, uint8)#rba_DiagLib_Bit32OverwriteBits(uint32 *,uint8 ,uint8 ,uint32 )"
+"--sm:--isolate:rba_DiagLib_Bit32SetBit(uint32 *, uint8)#rba_DiagLib_Bit32OverwriteBit(uint32 *,uint8 ,boolean )"
+"--sm:--isolate:rba_DiagLib_Bit8ClearBit(uint8 *, uint8)#rba_DiagLib_Bit8OverwriteBit(uint8 *,uint8 ,boolean )"
+"--sm:--isolate:rba_DiagLib_Bit8ClearBits(uint8 *, uint8, uint8)#rba_DiagLib_Bit8OverwriteBits(uint8 *,uint8 ,uint8 ,uint8 )"
+"--sm:--isolate:rba_DiagLib_Bit8SetBit(uint8 *, uint8)#rba_DiagLib_Bit8OverwriteBit(uint8 *,uint8 ,boolean )"
+
+#User Section
+"--dont_ci:*"
+"--do_ci:Dem_ConsisChk.c"
+"--do_ci:Dem_ConsisChk.h"
+"--do_ci:Dem_Deb.c"
+"--do_ci:Dem_Deb.h"
+"--do_ci:Dem_DebArTime.c"
+"--do_ci:Dem_DebBase.c"
+"--do_ci:Dem_DebCtrBaseClass.c"
+"--do_ci:Dem_DebCtrBaseClass.h"
+"--ci:--no_instr:all"
+#Dem_ConsisChk.c
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_ConsistencyCheckForFailedDTC"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_ConsistencyCheckForConfirmedDTC"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_ConsistencyCheckForDTC"
+#Dem_ConsisChk.h
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_StatusByteConsistencyCheck"
+#Dem_Deb.c
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_DebGetDebounceCounter4Calculation"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_DebCalculateFaultDetectionCounter"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_GetFaultDetectionCounter"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_GetFaultDetectionCounter_GeneralEvtInfo"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_ResetEventDebounceStatus"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_ManipulateEventDebounceStatus"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_DebHandleResetConditions"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_getEventDebouncing"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_GetDebouncingOfEvent"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_GetDebouncingOfEvent_GeneralEvtInfo"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_DebMainFunction"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_TimeBasedDebounceMainFunction"
+#Dem_Deb.h
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_DebCallFilter"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_DebHandleDebounceAction__processBits"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_DebHandleDebounceAction"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_DebHandleDebounceAction_4_TimeBasedDeb"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_TimeBasedDebounceInternMainFunction"
+#Dem_DebArTime.c
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_DebArTime_GetLimits"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_DebArTime_Filter"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_DebArTime_Cyclic"
+#Dem_DebBase.c
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_DebSwitchToAlternativeParameters"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_DebSwitchToParameters"
+#Dem_DebCtrBaseClass.c
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_DebCounterBaseClass_GetLimits"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_DebCounterBaseClass_Filter"
+#Dem_DebCtrBaseClass.h
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_getDebCtrBaseClassFailedThreshold"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_getDebCtrBaseClassPassedThreshold"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_getDebCtrBaseClassJumpUpValue"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_getDebCtrBaseClassJumpDownValue"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_getDebCtrBaseClassIsJumpDown"
+"--ci:--instr:stmt;func;rel;loop;call;decn;block;log;#Dem_getDebCtrBaseClassIsJumpUp"

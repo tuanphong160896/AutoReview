@@ -1,0 +1,4 @@
+core.ignore.recursive= 
+
+core.ignore= \
+    {Var*}

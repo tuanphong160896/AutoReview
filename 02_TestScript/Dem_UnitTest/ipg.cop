@@ -1,0 +1,17 @@
+#
+# Cantata Project-Level Options
+#
+# The options set in this file will be inherited by each test in the project.
+#
+# WARNING: Do not alter this file manually.
+#
+#tool.use=true
+#tool.tests=Cantata
+#tool.version=2
+"--analyse"
+"--parse:--line_directives"
+"--parse:-W2"
+"--sm:--call_seq_code"
+"--comp:H_W64_tb_mingw_comp_4.9.3_testversion_gcc_c99"
+
+#User Section
