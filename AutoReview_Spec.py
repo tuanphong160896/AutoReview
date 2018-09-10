@@ -1,7 +1,7 @@
 import os
 import re
 import xlrd
-from tkinter import messagebox
+from PyQt5.QtWidgets import QMessageBox
 
 #################################################
 
@@ -11,37 +11,34 @@ from tkinter import messagebox
 def main_Spec(dir):
     global report_Spec
     report_Spec = open("Report_Spec.txt", "w")
-
     global directory_Spec
     directory_Spec = dir + "/01_TestSpecification/"
     global workbook_Spec
     global all_sheet_Spec
 
     list_TestSpecs_files = findAllTestSpecs()
-    try:
-        for TestSpec_file in list_TestSpecs_files:
-            report_Spec.write("Checking file " + TestSpec_file + "...\n")
-            TestSpec_path = directory_Spec + TestSpec_file
-            
-            try:
-                workbook_Spec = xlrd.open_workbook(TestSpec_path)
-            except Exception as e:
-                messagebox.showinfo('Auto Review', e)
-                continue
-            
-            all_sheet_Spec = workbook_Spec.sheet_names()
-            Check_Stream_Spec()
-            Check_Date_TestPlan_Sheet()
-            Find_TCSheet_Spec()
-            report_Spec.write("\n\n\n*********************************************************\n\n\n")
-            workbook_Spec.release_resources()
-            del workbook_Spec
+    for TestSpec_file in list_TestSpecs_files:
+        report_Spec.write("Checking file " + TestSpec_file + "...\n")
+        TestSpec_path = directory_Spec + TestSpec_file
+        
+        try:
+            workbook_Spec = xlrd.open_workbook(TestSpec_path)
+        except Exception as e:
+            QMessageBox.warning(None,'Auto Review Tool', str(e))
+            continue
+        
+        all_sheet_Spec = workbook_Spec.sheet_names()
+        Check_Stream_Spec()
+        Check_Date_TestPlan_Sheet()
+        Find_TCSheet_Spec()
+        report_Spec.write("\n\n\n*********************************************************\n\n\n")
+        workbook_Spec.release_resources()
+        del workbook_Spec
 
-        report_Spec.close()
-        messagebox.showinfo('Auto Review', 'Auto Review for Test Spec DONE!')
+    report_Spec.close()
+    QMessageBox.warning(None,'Auto Review Tool', 'Auto Review for Test Script DONE!')
 
-    except Exception as e:
-        messagebox.showinfo('Auto Review', e)
+
 
 
 
@@ -56,12 +53,12 @@ def findAllTestSpecs():
                 list_files.insert(len(list_files), filename)
 
         if (len(list_files) == 0):
-            messagebox.showinfo('Auto Review', 'Cannot find any Test Spec file !')
+            QMessageBox.warning(None,'Auto Review Tool', 'Cannot find any Test Spec file !')
 
         return list_files
         
     except Exception as e:
-        messagebox.showinfo('Auto Review', e)
+        QMessageBox.warning(None,'Auto Review Tool', str(e))
 
 
 
@@ -74,13 +71,14 @@ def Check_Stream_Spec():
 
     try:
         Stream = TestReultSummary_sheet.cell(3, 2).value
+        Check_Stream_Spec = re.search('CUBAS', Stream)
+        if not (Check_Stream_Spec):
+            report_Spec.write("\n- WARNING: Stream was not filled")
+
     except Exception as e:
-        messagebox.showinfo('Auto Review', e)
+        QMessageBox.warning(None,'Auto Review Tool', str(e))
+        report_Spec.write("\n- WARNING: Can not check the Stream value")
 
-    Check_Stream_Spec = re.search('CUBAS', Stream)
-
-    if not (Check_Stream_Spec):
-        report_Spec.write("\n- WARNING: Stream was not filled")
 
     report_Spec.write("\n")
 
@@ -95,11 +93,11 @@ def Check_Date_TestPlan_Sheet():
     # Check Execution Date format #
     try:
         Execution_Date = TestPlan_sheet.cell(2, 10).value
+        if (Execution_Date != "<Execution Date>"):
+            report_Spec.write("\n- WARNING: Wrong Execution Date")
     except Exception as e:
-        messagebox.showinfo('Auto Review', e)
-
-    if (Execution_Date != '<Execution Date>'):
-        report_Spec.write("\n- WARNING: Wrong Execution Date")
+        QMessageBox.warning(None,'Auto Review Tool', str(e))
+        report_Spec.write("\n- WARNING: Can not check the Execution Date value")
 
     ###############################
 
@@ -115,7 +113,7 @@ def Find_TCSheet_Spec():
         try:
             checkTCUnit = re.search('TC_Unit_', sheet_name)
         except Exception as e:
-            messagebox.showinfo('Auto Review', e)
+            QMessageBox.warning(None,'Auto Review Tool', str(e))
 			
         if checkTCUnit:
             list_TC_sheet.insert(len(list_TC_sheet), sheet_name)
@@ -136,7 +134,7 @@ def Check_TC_Unit_Sheet_Spec(list_TCSheet_Spec):
         try:
             Expected_Results = Current_Sheet.cell(11, 1).value
         except Exception as e:
-            messagebox.showinfo('Auto Review', e)
+            MessageBox.warning(None,'Auto Review Tool', str(e))
 
         if (len(Expected_Results) == 0):
             report_Spec.write("\n- WARNING: Lack of Test Case Expected Results")
@@ -147,7 +145,7 @@ def Check_TC_Unit_Sheet_Spec(list_TCSheet_Spec):
         try:
             Design_Id = Current_Sheet.cell(20, 1).value
         except Exception as e:
-            messagebox.showinfo('Auto Review', e)
+            QMessageBox.warning(None,'Auto Review Tool', str(e))
 
         if ((Design_Id == "Missing GUID") or (len(Design_Id) == 0)):
             report_Spec.write("\n- WARNING: Lack of GUID")
@@ -158,7 +156,7 @@ def Check_TC_Unit_Sheet_Spec(list_TCSheet_Spec):
         try:
             Glob_Var = Current_Sheet.cell(27, 1).value
         except Exception as e:
-            messagebox.showinfo('Auto Review', e)
+            QMessageBox.warning(None,'Auto Review Tool', str(e))
         
         check_ptr_Glob_Var = len(re.findall(r'_ptr|ptr_', Glob_Var))
         check_entity_Glob_Var = len(re.findall(r'_entity', Glob_Var))
@@ -183,7 +181,7 @@ def Check_TC_Unit_Sheet_Spec(list_TCSheet_Spec):
         try:
             Param = Current_Sheet.cell(28, 1).value
         except Exception as e:
-            messagebox.showinfo('Auto Review', e)
+            QMessageBox.warning(None,'Auto Review Tool', str(e))
 
         check_ptr_param = len(re.findall(r'_ptr|ptr_', Param))
         check_entity_param = len(re.findall(r'_entity', Param))
@@ -204,7 +202,7 @@ def Check_TC_Unit_Sheet_Spec(list_TCSheet_Spec):
         try:
             Stub_Func = Current_Sheet.cell(29, 1).value
         except Exception as e:
-            messagebox.showinfo('Auto Review', e)
+            QMessageBox.warning(None,'Auto Review Tool', str(e))
 			
         check_fnc_Stub_Func = len(re.findall(r'_fnc|fnc_', Stub_Func))
         if (check_fnc_Stub_Func > 0):

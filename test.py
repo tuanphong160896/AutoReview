@@ -1,3 +1,20 @@
+Skip to content
+ 
+Search or jump to…
+
+Pull requests
+Issues
+Marketplace
+Explore
+ @tuanphong160896 Sign out
+0
+0 0 tuanphong160896/AutoReview
+ Code  Issues 0  Pull requests 0  Projects 0  Wiki  Insights  Settings
+AutoReview/AutoReview_main.pyw
+669bc35  22 days ago
+ tuanphong first commit at home
+     
+123 lines (84 sloc)  3.63 KB
 #################################################
 
 #packing to exe command: pyinstaller -F -w AutoReview_main.py
@@ -120,3 +137,16 @@ def CheckNumberofFiles(dir):
 #################################################
 
 main()
+© 2018 GitHub, Inc.
+Terms
+Privacy
+Security
+Status
+Help
+Contact GitHub
+Pricing
+API
+Training
+Blog
+About
+Press h to open a hovercard with more details.

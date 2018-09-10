@@ -1,6 +1,6 @@
 import os
 import re
-from tkinter import messagebox
+from PyQt5.QtWidgets import QMessageBox
 #################################################
 
 #################################################
@@ -23,7 +23,7 @@ def main_Script(dir):
             Cfile_name = Cfile_name[:index]
             Cfile_name = Cfile_name[::-1]
         except Exception as e:
-            messagebox.showinfo('Auto Review', e)
+            QMessageBox.warning(None,'Auto Review Tool', str(e))
 
         report_Script.write(("Checking file " + Cfile_name + "..."))
         checkTestScript_ConventionName(Cfile_name)
@@ -31,7 +31,7 @@ def main_Script(dir):
         report_Script.write("\n\n\n*********************************************************\n\n\n")
 
     report_Script.close()
-    messagebox.showinfo('Auto Review', 'Auto Review for Test Script DONE!')
+    QMessageBox.warning(None,'Auto Review Tool', 'Auto Review for Test Spec DONE!')
 
 
 
@@ -51,11 +51,12 @@ def findAllTestScripts():
                         list_files.insert(len(list_files), temp_root)
 
         if (len(list_files) == 0):
-            messagebox.showinfo('Auto Review', 'Cannot find any Test Script file !')
+            QMessageBox.warning(None,'Auto Review Tool', 'Cannot find any Test Script file !')
         return list_files
 
     except Exception as e:
-        messagebox.showinfo('Auto Review', e)
+        QMessageBox.warning(None,'Auto Review Tool', str(e))
+        
 
 
 
@@ -107,7 +108,7 @@ def checkTestCase_ConventionName(dir_TestScript_file):
         check_Stub_Functions(all_codes, Stub_Functions_list)
 
     except Exception as e:
-        messagebox.showinfo('Auto Review', e)
+        QMessageBox.warning(None,'Auto Review Tool', str(e))
 
     C_file.close()
     del C_file

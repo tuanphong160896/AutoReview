@@ -4,6 +4,7 @@ import re
 import xlrd
 import re
 import datetime
+from PyQt5.QtWidgets import QMessageBox
 
 list_TestSumm_files = []
 list_TCSheet_Summ = []
@@ -56,6 +57,7 @@ def main_Summ(dir):
         del workbook_Spec
 
     report_Summ.close()
+    QMessageBox.warning(None,'Auto Review Tool', 'Auto Review for Test Summary DONE!')
 
 
 #################################################
@@ -71,27 +73,32 @@ def findAllTestSumm():
 
 
 def readDateinTestReport(TestReport_path):
-    file_object = open(TestReport_path, "r")
-    TestReport_file = file_object.readlines()
-    line_counter = 0
-    date = ""
-    for lineofcode in TestReport_file:
-        line_counter += 1
-        if (line_counter == 130):
-            print(lineofcode)
-            date = lineofcode.strip()
-            break
+    try:
+        file_object = open(TestReport_path, "r")
+        TestReport_file = file_object.readlines()
+        line_counter = 0
+        date = ""
+        for lineofcode in TestReport_file:
+            line_counter += 1
+            if (line_counter == 130):
+                #print(lineofcode)
+                date = lineofcode.strip()
+                break
 
-    ref_date = date[30:34].strip()
-    if (len(ref_date) == 1):
-        ref_date = "0" + ref_date
-    ref_month = date[34:42].strip()
-    ref_month = ConvertMonth(ref_month)
-    ref_year = date[42:47].strip()
-    ref_date_report = ref_year + "-" + ref_month + "-" + ref_date
-    file_object.close()
-    return ref_date_report
+        ref_date = date[30:34].strip()
+        if (len(ref_date) == 1):
+            ref_date = "0" + ref_date
+        ref_month = date[34:42].strip()
+        ref_month = ConvertMonth(ref_month)
+        ref_year = date[42:47].strip()
+        ref_date_report = ref_year + "-" + ref_month + "-" + ref_date
+        file_object.close()
+        return ref_date_report
 
+    except Exception as e:
+        QMessageBox.warning(None,'Auto Review Tool', str(e))
+        report_Spec.write("\n- WARNING: Can not read date in TestReport")
+        return 0
 
 #################################################
 
@@ -147,18 +154,24 @@ def Check_TestPlan_Sheet(ref_date_report):
     Ref_Spec_Sheet = workbook_Spec.sheet_by_name('TestPlan')
 
     # Check Execution Date format #
-    Execution_Date = TestPlan_sheet.cell_value(2, 10)
-    Execution_Date_check = isinstance(Execution_Date, float)
+    try:
+        Execution_Date = TestPlan_sheet.cell_value(2, 10)
+        Execution_Date_check = isinstance(Execution_Date, float)
+        if not (Execution_Date_check):
+            report_Summ.write("\n- WARNING: Execution Date was not filled")
+        else:
+            Execution_Date = str(
+                datetime.datetime(
+                    *xlrd.xldate_as_tuple(Execution_Date, workbook_Summ.datemode)))
+            if (Execution_Date[0:10] != ref_date_report):
+                report_Summ.write("\n- WARNING: Execution Date is NOT consistent with Test Report")
 
-    if not (Execution_Date_check):
-        report_Summ.write("\n- WARNING: Execution Date was not filled")
-    else:
-        Execution_Date = str(
-            datetime.datetime(
-                *xlrd.xldate_as_tuple(Execution_Date, workbook_Summ.datemode)))
+    except Exception as e:
+        QMessageBox.warning(None,'Auto Review Tool', str(e))
+        report_Spec.write("\n- WARNING: Can not check the Execution Date value")
 
-        if (Execution_Date[0:10] != ref_date_report):
-            report_Summ.write("\n- WARNING: Execution Date is NOT consistent with Test Report")
+
+
 
 
     ###############################
