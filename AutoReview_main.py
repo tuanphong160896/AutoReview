@@ -56,7 +56,7 @@ class App(QMainWindow):
         # Create label
         instruction_text = "1. Click on the Browse directory button.\n\n" + \
                            "2. Choose the directory which contains 01_, 02_, 03_, 04_ folders.\n\n" + \
-                           "3. Click on any Review buttons: Test Script, Test Spec or Test Summary."
+                           "3. Click on any Review button: Test Script, Test Spec or Test Summary."
  
         self.label = QLabel(instruction_text, self)
         self.label.setFont(QtGui.QFont('MS San Serif', 9))
@@ -66,10 +66,10 @@ class App(QMainWindow):
 
         #insert PYTHON logo
         self.github = QLabel(self)
-        self.github.pic = QtGui.QPixmap('github.png')
+        self.github.pic = QtGui.QPixmap('Octocat.png')
         self.github.setPixmap(self.github.pic)
         self.github.adjustSize()
-        self.github.move((self.unit_size)*60,(self.unit_size)*22)
+        self.github.move((self.unit_size)*58,(self.unit_size)*21)
         self.github.show()
 
         # Create textbox
