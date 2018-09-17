@@ -117,6 +117,7 @@ class App(QMainWindow):
         try:
             self.input_directory = QFileDialog.getExistingDirectory(None, 'Select folder:')
             self.textbox.setText(self.input_directory)
+            print(sys.argv[:])
         except Exception as e:
             messagebox.showinfo('Auto Review Tool', e)
 
@@ -150,6 +151,9 @@ class App(QMainWindow):
                 AutoReview_Summ.main_Summ(self.input_directory)
             else:
                 QMessageBox.warning(self, 'Auto Review Tool', 'Can not continue...')
+
+    def debug(self,input_str):
+        self.textbox.setText(input_str)
            
 #################################################
 
@@ -174,9 +178,9 @@ def CheckNumberofFiles(dir):
 
 
 #################################################
-
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     # app.setStyle('fusion')
     ex = App()
     sys.exit(app.exec_())
+

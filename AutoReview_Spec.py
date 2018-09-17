@@ -1,215 +1,204 @@
 import os
 import re
 import xlrd
-from PyQt5.QtWidgets import QMessageBox
 
 #################################################
 
-#################################################
 
-
-def main_Spec(dir):
+def main_Spec():
+    dir = "C:/Users/tuanp/Desktop/New folder/AutoReview_Spec/TestAppl"
     global report_Spec
     report_Spec = open("Report_Spec.txt", "w")
-    global directory_Spec
-    directory_Spec = dir + "/01_TestSpecification/"
-    global workbook_Spec
-    global all_sheet_Spec
+    report_name = getReportName(dir)
+    report_Spec = open(report_name, "w")
 
-    list_TestSpecs_files = findAllTestSpecs()
+    directory_Spec = dir + "/01_TestSpecification/"
+    global workbook_Spec, all_sheet_Spec
+    list_TestSpecs_files = findAllTestSpecs(directory_Spec)
+
     for TestSpec_file in list_TestSpecs_files:
-        report_Spec.write("Checking file " + TestSpec_file + "...\n")
+        print_writetoReport("Checking file " + TestSpec_file + "...\n")
         TestSpec_path = directory_Spec + TestSpec_file
-        
         try:
             workbook_Spec = xlrd.open_workbook(TestSpec_path)
         except Exception as e:
-            QMessageBox.warning(None,'Auto Review Tool', str(e))
+            print_writetoReport("Cannot open "+ TestSpec_path + "\n" + str(e))
             continue
-        
+
         all_sheet_Spec = workbook_Spec.sheet_names()
         Check_Stream_Spec()
-        Check_Date_TestPlan_Sheet()
         Find_TCSheet_Spec()
-        report_Spec.write("\n\n\n*********************************************************\n\n\n")
         workbook_Spec.release_resources()
         del workbook_Spec
 
+        print_writetoReport("\n\n\n*********************************************************\n\n\n")
     report_Spec.close()
-    QMessageBox.warning(None,'Auto Review Tool', 'Auto Review for Test Script DONE!')
 
+#################################################
 
+def getReportName(dir):
+    #get current active branch
+    try:
+        active_branch = str(Repo(dir).active_branch)
+    except Exception as e:
+        print("Cannot find current active branch in git")
+        active_branch = 'defaultbranch'
+    
+    #get datetime
+    time = str(datetime.now().strftime("%H%M%S") + '.txt')
+    #print(time)
 
+    #Report name
+    report_name = "ReviewReport_TestSpec_" + active_branch + "_" + time + ".txt"
+    
+    return report_name
 
 
 #################################################
 
 
-def findAllTestSpecs():
-    list_files = []
-    try:
-        for root, dirs, files in os.walk(directory_Spec):
-            for filename in files:
-                list_files.insert(len(list_files), filename)
+def findAllTestSpecs(directory_Spec):
+    list_Specfiles = []
+    for root, dirs, files in os.walk(directory_Spec):
+        for filename in files:
+            if not (filename[0:2] == '~$'): #check for temporary if file is opening
+                list_Specfiles.append(filename)
 
-        if (len(list_files) == 0):
-            QMessageBox.warning(None,'Auto Review Tool', 'Cannot find any Test Spec file !')
+    if (len(list_Specfiles) == 0):
+        print_writetoReport("\n- WARNING: Cannot find any Test Spec file.\nThe tool stopped here.")
 
-        return list_files
-        
-    except Exception as e:
-        QMessageBox.warning(None,'Auto Review Tool', str(e))
-
+    return list_Specfiles
 
 
 #################################################
 
 
 def Check_Stream_Spec():
-    report_Spec.write("\nChecking TestResultSummary sheet...")
-    TestReultSummary_sheet = workbook_Spec.sheet_by_name('TestResultSummary')
-
+    print_writetoReport("\nChecking TestResultSummary sheet...")
     try:
-        Stream = TestReultSummary_sheet.cell(3, 2).value
-        Check_Stream_Spec = re.search('CUBAS', Stream)
-        if not (Check_Stream_Spec):
-            report_Spec.write("\n- WARNING: Stream was not filled")
-
+        TestReultSummary_sheet = workbook_Spec.sheet_by_name('TestResultSummary')
     except Exception as e:
-        QMessageBox.warning(None,'Auto Review Tool', str(e))
-        report_Spec.write("\n- WARNING: Can not check the Stream value")
+        print_writetoReport("\n- WARNING: Cannot open TestResultSummary sheet\n" + str(e))
+        return
 
+    check_feature_under_tests = 0
+    for column_index in range(TestReultSummary_sheet.ncols):
+        for row_index in range(TestReultSummary_sheet.nrows):
+            feature_under_test = str(TestReultSummary_sheet.cell(row_index,column_index).value)
+            if (feature_under_test.strip() == "Feature under tests name"):
+                check_feature_under_tests = 1
+                stream = TestReultSummary_sheet.cell(row_index,column_index+2).value
+                break
+        if (check_feature_under_tests == 1):
+            break
+        
+    if not (check_feature_under_tests):
+        print_writetoReport("\n- WARNING: Cannot find Feature under tests name in TestResultSummary sheet")
 
-    report_Spec.write("\n")
+    Check_Stream_Spec = re.search('CUBAS', stream)
+    if not (Check_Stream_Spec):
+        print_writetoReport("\n- WARNING: CUBAS Stream was not filled")
 
-
-#################################################
-
-
-def Check_Date_TestPlan_Sheet():
-    report_Spec.write("\nChecking TestPlan sheet...")
-    TestPlan_sheet = workbook_Spec.sheet_by_name('TestPlan')
-
-    # Check Execution Date format #
-    try:
-        Execution_Date = TestPlan_sheet.cell(2, 10).value
-        if (Execution_Date != "<Execution Date>"):
-            report_Spec.write("\n- WARNING: Wrong Execution Date")
-    except Exception as e:
-        QMessageBox.warning(None,'Auto Review Tool', str(e))
-        report_Spec.write("\n- WARNING: Can not check the Execution Date value")
-
-    ###############################
-
-    report_Spec.write("\n")
+    print_writetoReport("\n")
 
 
 #################################################
 
 
 def Find_TCSheet_Spec():
-    list_TC_sheet = []
+    list_TC_sheets = []
     for sheet_name in all_sheet_Spec:
-        try:
-            checkTCUnit = re.search('TC_Unit_', sheet_name)
-        except Exception as e:
-            QMessageBox.warning(None,'Auto Review Tool', str(e))
-			
-        if checkTCUnit:
-            list_TC_sheet.insert(len(list_TC_sheet), sheet_name)
+        checkTCUnit_sheet = re.search('TC_Unit_', sheet_name)
+        if checkTCUnit_sheet:
+            list_TC_sheets.append(sheet_name)
 
-    Check_TC_Unit_Sheet_Spec(list_TC_sheet)
-
+    if not (list_TC_sheets == []):
+        Scan_TCSheet(list_TC_sheets)
+    else:
+        print_writetoReport("\nWARNING: Cannot find any TC_Unit sheet. \nThe tool stopped here.")
+        return
 
 #################################################
 
 
-def Check_TC_Unit_Sheet_Spec(list_TCSheet_Spec):
-    #global workbook_Spec, list_TCSheet_Spec
-    for TCSheet in list_TCSheet_Spec:
-        report_Spec.write("\nChecking sheet: " + TCSheet + "...")
+def Scan_TCSheet(list_TC_sheets):
+    list_to_check = ["Test Case Expected Results","Covered Design_Id","Set Global Variables","Set Parameters","Set Stub Functions"]
+    for TCSheet in list_TC_sheets:
+        list_checked = []
+        print_writetoReport("\nChecking sheet: " + TCSheet + "...")
         Current_Sheet = workbook_Spec.sheet_by_name(TCSheet)
-
-        # Check Test Case Expected Results #
-        try:
-            Expected_Results = Current_Sheet.cell(11, 1).value
-        except Exception as e:
-            MessageBox.warning(None,'Auto Review Tool', str(e))
-
-        if (len(Expected_Results) == 0):
-            report_Spec.write("\n- WARNING: Lack of Test Case Expected Results")
-
-        ####################################
-
-        # Check Covered Design_Id #
-        try:
-            Design_Id = Current_Sheet.cell(20, 1).value
-        except Exception as e:
-            QMessageBox.warning(None,'Auto Review Tool', str(e))
-
-        if ((Design_Id == "Missing GUID") or (len(Design_Id) == 0)):
-            report_Spec.write("\n- WARNING: Lack of GUID")
-
-        ###########################
-
-        # Check Set Global Variables mistake #
-        try:
-            Glob_Var = Current_Sheet.cell(27, 1).value
-        except Exception as e:
-            QMessageBox.warning(None,'Auto Review Tool', str(e))
-        
-        check_ptr_Glob_Var = len(re.findall(r'_ptr|ptr_', Glob_Var))
-        check_entity_Glob_Var = len(re.findall(r'_entity', Glob_Var))
-        check_fnc_Glob_Var = len(re.findall(r'_fnc|fnc_', Glob_Var))
-        check_asteris_Glob_Var = Glob_Var.count('*')
-
-        if (check_ptr_Glob_Var > 0):
-            report_Spec.write("\n- WARNING: Remaining " + str(check_ptr_Glob_Var) + " (ptr) in Global Variables")
-
-        if (check_entity_Glob_Var > 0):
-            report_Spec.write("\n- WARNING: Remaining " + str(check_entity_Glob_Var) + " (_entity) in Global Variables")
-
-        if (check_fnc_Glob_Var > 0):
-            report_Spec.write("\n- WARNING: Remaining " + str(check_fnc_Glob_Var) + " (fnc) in Global Variables")
-
-        if (check_asteris_Glob_Var > 0):
-            report_Spec.write("\n- WARNING: Remaining " + str(check_asteris_Glob_Var) + " (*) in Global Variables")
-
-        ###########################
-
-        # Check Set Parameters mistake #
-        try:
-            Param = Current_Sheet.cell(28, 1).value
-        except Exception as e:
-            QMessageBox.warning(None,'Auto Review Tool', str(e))
-
-        check_ptr_param = len(re.findall(r'_ptr|ptr_', Param))
-        check_entity_param = len(re.findall(r'_entity', Param))
-        check_asteris_param = Param.count('*')
-
-        if (check_ptr_param > 0):
-            report_Spec.write("\n- WARNING: Remaining " + str(check_ptr_param) + " (ptr) in Paramters")
-
-        if (check_entity_param > 0):
-            report_Spec.write("\n- WARNING: Remaining " + str(check_entity_param) + " (_entity) in Paramters")
-
-        if (check_asteris_param > 0):
-            report_Spec.write("\n- WARNING: Remaining " + str(check_asteris_param) + " (*) in Paramters")
-
-        ###########################
-
-        # Check Stub Functon mistake #
-        try:
-            Stub_Func = Current_Sheet.cell(29, 1).value
-        except Exception as e:
-            QMessageBox.warning(None,'Auto Review Tool', str(e))
-			
-        check_fnc_Stub_Func = len(re.findall(r'_fnc|fnc_', Stub_Func))
-        if (check_fnc_Stub_Func > 0):
-            report_Spec.write("\n- WARNING: Remaining " + str(check_fnc_Stub_Func) + " (fnc) in Stub Functions")
-
-        ###########################
-        report_Spec.write("\n")
+        for row_index in range(Current_Sheet.nrows):
+            content_reference = (Current_Sheet.cell(row_index, 0).value).strip()
+            if not (content_reference == "" ):
+                content = Current_Sheet.cell(row_index, 1).value
+                Check_TCSheet_content(content_reference,content,list_checked)
+        Compare_Checked_toCheck(list_checked, list_to_check, TCSheet)
+        print_writetoReport("\n")
 
 
 #################################################
+
+
+def Check_TCSheet_content(content_reference,content,list_checked):
+    # Check Covered Design_Id #
+    if (content_reference == "Test Case Expected Results"):
+        list_checked.append(content_reference)
+        if (len(content) == 0):
+            print_writetoReport("\n- WARNING: Test Case Expected Results was not filled")
+
+    # Check Covered Design_Id #
+    elif (content_reference == "Covered Design_Id"):
+        list_checked.append(content_reference)
+        if ((content == "Missing GUID") or (len(content) == 0)):
+            print_writetoReport("\n- WARNING: GUID was not filled")
+
+    # Check Set #
+    elif (content_reference == "Set"):
+        identity = ""
+        if (re.search("Global", content)):
+            identity = "Set Global Variables"
+        elif (re.search("Parameters", content)):
+            identity = "Set Parameters"
+        elif (re.search("Stub", content)):
+            identity = "Set Stub Functions"
+        else: return
+        list_checked.append(identity)    
+        check_Set_Global_Variables(content,identity)
+
+
+#################################################
+
+def check_Set_Global_Variables(content, indentity):
+    check_ptr = content.count('ptr_') + content.count('_ptr')
+    check_entity = content.count('_entity')
+    check_fnc = content.count('_fnc') + content.count('fnc_')
+    check_asteris = content.count('*')
+
+    if (check_ptr > 0):
+        print_writetoReport("\n- WARNING: Remaining " + str(check_ptr) + " (ptr) in " + indentity)
+    if (check_entity > 0):
+        print_writetoReport("\n- WARNING: Remaining " + str(check_entity) + " (_entity) in " + indentity)
+    if (check_fnc > 0):
+        print_writetoReport("\n- WARNING: Remaining " + str(check_fnc) + " (fnc) in " + indentity)
+    if (check_asteris > 0):
+        print_writetoReport("\n- WARNING: Remaining " + str(check_asteris) + " (*) in " + indentity)
+
+
+#################################################
+
+def Compare_Checked_toCheck(list_checked, list_to_check, TCSheet):
+    for tocheck in list_to_check:
+        if tocheck not in list_checked:
+            print_writetoReport("\n- WARNING: Cannot find " + tocheck + " in " + TCSheet)
+
+
+#################################################
+
+
+def print_writetoReport(content):
+    print(content)
+    report_Spec.write(content)
+
+
+#################################################
+main_Spec()

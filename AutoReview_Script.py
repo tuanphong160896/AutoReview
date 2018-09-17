@@ -1,63 +1,75 @@
 import os
 import re
-from PyQt5.QtWidgets import QMessageBox
+from datetime import datetime
 #################################################
 
-#################################################
 
-
-def main_Script(dir):
+def main_Script():
+    dir = "C:/Users/tuanp/Desktop/New folder/AutoReview_Spec/TestAppl"
+    
     global report_Script
-    report_Script = open("Report_Script.txt", "w")
+    report_name = getReportName(dir)
+    report_Script = open(report_name, "w")
 
-    global directory_Script
     directory_Script = dir + "/02_TestScript/"
-
-    list_dir_TestScript_files = findAllTestScripts()
+    list_dir_TestScript_files = findAllTestScripts(directory_Script)
 
     for dir_TestScript_file in list_dir_TestScript_files:
-
+        #get .c filename
         try:
-            Cfile_name = dir_TestScript_file[::-1]
-            index = Cfile_name.index("/")
-            Cfile_name = Cfile_name[:index]
-            Cfile_name = Cfile_name[::-1]
+            inverse_dir = dir_TestScript_file[::-1]
+            first_slash_index = inverse_dir.index("/")
+            inverse_Cfile_name = inverse_dir[:first_slash_index]
+            Cfile_name = inverse_Cfile_name[::-1]
         except Exception as e:
-            QMessageBox.warning(None,'Auto Review Tool', str(e))
+            print_writetoReport("Cannot get Test Script name in " + dir_TestScript_file + "\n" + str(e))
+            continue
 
-        report_Script.write(("Checking file " + Cfile_name + "..."))
+        print_writetoReport("Checking file " + Cfile_name + "...")
         checkTestScript_ConventionName(Cfile_name)
         checkTestCase_ConventionName(dir_TestScript_file)
-        report_Script.write("\n\n\n*********************************************************\n\n\n")
+        print_writetoReport("\n\n\n*********************************************************\n\n\n")
 
     report_Script.close()
-    QMessageBox.warning(None,'Auto Review Tool', 'Auto Review for Test Spec DONE!')
 
+#################################################
 
+def getReportName(dir):
+    #get current active branch
+    try:
+        active_branch = str(Repo(dir).active_branch)
+    except Exception as e:
+        print("Cannot find current active branch in git")
+        active_branch = 'defaultbranch'
+    
+    #get datetime
+    time = str(datetime.now().strftime("%H%M%S") + '.txt')
+    #print(time)
+
+    #Report name
+    report_name = "ReviewReport_TestScript_" + active_branch + "_" + time + ".txt"
+    
+    return report_name
 
 #################################################
 
 
-def findAllTestScripts():
-    list_files = []
-    try:
-        for root, dirs, Files in os.walk(directory_Script):
-            check_tests = re.search('tests', root)
-            if (check_tests):
-                for filename in Files:
-                    temp = filename[::-1]
-                    if (temp[0:2] == 'c.'):
-                        temp_root = root + "/" + filename
-                        list_files.insert(len(list_files), temp_root)
+def findAllTestScripts(directory_Script):
+    list_dir_Cfiles = []
+    
+    for root, dirs, Files in os.walk(directory_Script):
+        check_tests = re.search('tests', root)
+        if (check_tests):
+            for filename in Files:
+                inverse_name = filename[::-1]
+                if (inverse_name[0:2] == 'c.'):
+                    dir_Cfile = root + "/" + filename
+                    list_dir_Cfiles.append(dir_Cfile)
 
-        if (len(list_files) == 0):
-            QMessageBox.warning(None,'Auto Review Tool', 'Cannot find any Test Script file !')
-        return list_files
+    if (len(list_dir_Cfiles) == 0):
+        print_writetoReport("\n- WARNING: Cannot find any Test Script file.\nThe tool stopped here.")
 
-    except Exception as e:
-        QMessageBox.warning(None,'Auto Review Tool', str(e))
-        
-
+    return list_dir_Cfiles
 
 
 #################################################
@@ -68,47 +80,43 @@ def checkTestScript_ConventionName(Cfile_name):
     check_Cfg = len(re.findall('_Cfg', Cfile_name))
 
     if ((check_UT == 0) or (check_Cfg == 0)):
-        report_Script.write("\n: Wrong naming convention of Test Script file")
+        print_writetoReport("\n- WARNING: Wrong naming convention of Test Script file")
 
 
 #################################################
 
 
 def checkTestCase_ConventionName(dir_TestScript_file):
-    try:
-        C_file = open(dir_TestScript_file, "r")
-        all_codes = C_file.readlines()
-        line_counter = 0
-        declare_TC_flag = 0
-        list_TestCases = []
-        for LineofCode in all_codes:
-            line_counter += 1
+    C_file = open(dir_TestScript_file, "r")
+    all_codes = C_file.readlines()
+    line_counter = 0
+    declare_TC_flag = 0
+    list_TestCases = []
+    for LineofCode in all_codes:
+        line_counter += 1
 
-            if (LineofCode.find('TEST_SCRIPT_WARNING("Verify') != -1):
-                report_Script.write("\n- WARNING: Remaining TEST_SCRIPT_- WARNING at line " + str(line_counter))
+        if (LineofCode.find('TEST_SCRIPT_WARNING("Verify') != -1):
+            print_writetoReport("\n- WARNING: Remaining TEST_SCRIPT_WARNING at line " + str(line_counter))
 
-            if ((LineofCode.find('void run_tests()') != -1) and (LineofCode.find(';') == -1)):
-                declare_TC_flag = 1
+        if ((LineofCode.find('void run_tests()') != -1) and (LineofCode.find(';') == -1)):
+            declare_TC_flag = 1
 
-            if (declare_TC_flag == 1):
-                if (LineofCode.find('(1)') != -1):
-                    TestCase_name = (LineofCode.strip())[0:-4]
+        if (declare_TC_flag == 1):
+            if (LineofCode.find('(1)') != -1):
+                TestCase_name = (LineofCode.strip())[0:-4]
 
-                    if (LineofCode.find('_Cfg0') == -1):
-                        report_Script.write("\n- WARNING: Wrong naming convention of Test Case: " + TestCase_name + " at line " + str(line_counter))
+                if (LineofCode.find('_Cfg0') == -1):
+                    print_writetoReport("\n- WARNING: Wrong naming convention of Test Case: " + TestCase_name + " at line " + str(line_counter))
 
-                    list_TestCases.insert(len(list_TestCases), TestCase_name)
+                list_TestCases.append(TestCase_name)
 
-                if (LineofCode.find('rule_set') != -1):
-                    declare_TC_flag = 0
-                    report_Script.write("\n")
-                    break
+            if (LineofCode.find('rule_set') != -1):
+                declare_TC_flag = 0
+                print_writetoReport("\n")
+                break
 
-        Stub_Functions_list = checkTestCase_format(all_codes, list_TestCases)
-        check_Stub_Functions(all_codes, Stub_Functions_list)
-
-    except Exception as e:
-        QMessageBox.warning(None,'Auto Review Tool', str(e))
+    Stub_Functions_list = checkTestCase_format(all_codes, list_TestCases)
+    check_Stub_Functions(all_codes, Stub_Functions_list)
 
     C_file.close()
     del C_file
@@ -150,7 +158,7 @@ def checkTestCase_format(all_codes, list_TestCases):
 
         if ((LineofCode.find('void') != -1) and (LineofCode.find('(int doIt)') != -1) and (Begin_TC_flag == 0)):
             TestCase_name = (LineofCode.strip())[5:-11]
-            report_Script.write("\nChecking format of TC: " + TestCase_name + " at line " + str(line_counter))
+            print_writetoReport("\nChecking format of TC: " + TestCase_name + " at line " + str(line_counter))
             Begin_TC_flag = 1
 
             if (TestCase_name == list_TestCases[0]):
@@ -179,13 +187,12 @@ def checkTestCase_format(all_codes, list_TestCases):
                     var_Declare = LineofCode.strip()
                     space_index = var_Declare.index(' ')
                     var_Declare = var_Declare[space_index + 1:-1]
-                    list_Tester_Define_Declaration.insert(
-                        len(list_Tester_Define_Declaration), var_Declare)
+                    list_Tester_Define_Declaration.append(var_Declare)
 
                 if ((LineofCode.find('INITIALISE') != -1) and (LineofCode.find('_entity') != -1)):
                     var_Init = LineofCode.strip()
                     var_Init = var_Init[11:-2]
-                    list_Tester_Define_Init.insert(len(list_Tester_Define_Init), var_Init)
+                    list_Tester_Define_Init.append(var_Init)
 
                 if ((LineofCode.find('/*') != -1) and (LineofCode.find('*/') != -1) and (LineofCode.find('Tester define') == -1)):
                     for i in range(len(list_Tester_Define_Declaration)):
@@ -196,7 +203,7 @@ def checkTestCase_format(all_codes, list_TestCases):
                                 break
 
                         if (check == 0):
-                            report_Script.write("\n- WARNING: " + list_Tester_Define_Declaration[i] + " was not INITIALISED")
+                            print_writetoReport("\n- WARNING: " + list_Tester_Define_Declaration[i] + " was not INITIALISED")
 
                     Tester_Define_flag = 0
 
@@ -212,8 +219,7 @@ def checkTestCase_format(all_codes, list_TestCases):
             if (LineofCode.find('initialise_global_data()') != -1):
                 Initialise_check = 1
 
-            if (LineofCode.find('Set expected values for global data checks')
-                    != -1):
+            if (LineofCode.find('Set expected values for global data checks') != -1):
                 Set_expected_check = 1
 
             if (LineofCode.find('initialise_expected_global_data()') != -1):
@@ -234,14 +240,14 @@ def checkTestCase_format(all_codes, list_TestCases):
                     function_name = LineofCode[first_index + 1:second_index]
                     check = 0
                     if (len(Stub_Functions_list) == 0):
-                        Stub_Functions_list.insert(len(Stub_Functions_list), function_name)
+                        Stub_Functions_list.append(function_name)
                     else:
                         for i in range(len(Stub_Functions_list)):
                             if (function_name == Stub_Functions_list[i]):
                                 check = 1
                                 break
                         if (check == 0):
-                            Stub_Functions_list.insert(len(Stub_Functions_list), function_name)
+                            Stub_Functions_list.append(function_name)
 
                 if (LineofCode.find(');') != -1):
                     Expected_Calls_flag = 0
@@ -271,54 +277,54 @@ def checkTestCase_format(all_codes, list_TestCases):
             # Check End of Test Case #
             if (LineofCode.find('END_TEST();') != -1):
                 if ((Comp_Flag_check == 0) and (First_TC_check == 1)):
-                    report_Script.write("\n- WARNING: Lack of Compilation Flag")
+                    print_writetoReport("\n- WARNING: Lack of Compilation Flag")
 
                 if (Test_Method_check == 0):
-                    report_Script.write("\n- WARNING: Lack of Test Method")
+                    print_writetoReport("\n- WARNING: Lack of Test Method")
 
                 if (Tester_Define_check == 0):
-                    report_Script.write("\n- WARNING: Lack of Tester Define")
+                    print_writetoReport("\n- WARNING: Lack of Tester Define")
 
                 if (TestCase_data_Declaration_check == 0):
-                    report_Script.write("\n- WARNING: Lack of Test case data declarations")
+                    print_writetoReport("\n- WARNING: Lack of Test case data declarations")
 
                 if (Set_Global_Data_check == 0):
-                    report_Script.write("\n- WARNING: Lack of Set global data")
+                    print_writetoReport("\n- WARNING: Lack of Set global data")
 
                 if (Initialise_check == 0):
-                    report_Script.write("\n- WARNING: Lack of initialise_global_data()")
+                    print_writetoReport("\n- WARNING: Lack of initialise_global_data()")
 
                 if (Set_expected_check == 0):
-                    report_Script.write("\n- WARNING: Lack of Set expected values for global data checks")
+                    print_writetoReport("\n- WARNING: Lack of Set expected values for global data checks")
 
                 if (Initialise_expected_check == 0):
-                    report_Script.write("\n- WARNING: Lack of initialise_expected_global_data()")
+                    print_writetoReport("\n- WARNING: Lack of initialise_expected_global_data()")
 
                 if (Expected_Call_Sequences_check == 0):
-                    report_Script.write("\n- WARNING: Lack of Expected Call Sequence")
+                    print_writetoReport("\n- WARNING: Lack of Expected Call Sequence")
 
                 if (Expected_Calls_check == 0):
-                    report_Script.write("\n- WARNING: Lack of EXPECTED_CALLS")
+                    print_writetoReport("\n- WARNING: Lack of EXPECTED_CALLS")
 
                 if (Call_SUT_check == 0):
-                    report_Script.write("\n- WARNING: Lack of Call SUT")
+                    print_writetoReport("\n- WARNING: Lack of Call SUT")
 
                 if (TC_checks_check == 0):
-                    report_Script.write("\n- WARNING: Lack of Test case checks")
+                    print_writetoReport("\n- WARNING: Lack of Test case checks")
 
                 if (Expected_Result_check == 0):
-                    report_Script.write("\n- WARNING: Lack of Expected Result")
+                    print_writetoReport("\n- WARNING: Lack of Expected Result")
 
                 if (Checks_global_data_check == 0):
-                    report_Script.write("\n- WARNING: Lack of Checks on global data")
+                    print_writetoReport("\n- WARNING: Lack of Checks on global data")
 
                 if (check_global_check == 0):
-                    report_Script.write("\n- WARNING: Lack of check_global_data()")
+                    print_writetoReport("\n- WARNING: Lack of check_global_data()")
 
                 if (GUID_check == 0):
-                    report_Script.write("\n- WARNING: Lack of GUID")
+                    print_writetoReport("\n- WARNING: Lack of GUID")
 
-                report_Script.write("\n")
+                print_writetoReport("\n")
 
                 list_Tester_Define_Declaration = []
                 list_Tester_Define_Init = []
@@ -348,7 +354,7 @@ def checkTestCase_format(all_codes, list_TestCases):
 
 
 def check_Stub_Functions(all_codes, Stub_Functions_list):
-    report_Script.write("\nChecking Stub & Isolate Functions...")
+    print_writetoReport("\nChecking Stub & Isolate Functions...")
 
     line_counter = 0
     Begin_Stub_Function_flag = 0
@@ -402,7 +408,7 @@ def check_Stub_Functions(all_codes, Stub_Functions_list):
                             CHECK_count += LineofCode.count('CHECK_')
                             if (LineofCode.find('return') != -1):
                                 if (CHECK_count < param_count):
-                                    report_Script.write("\n- WARNING: Lack of checking parameters in INSTANCE: " + Instance_name + " at Function " + Stub_Function_name)
+                                    print_writetoReport("\n- WARNING: Lack of checking parameters in INSTANCE: " + Instance_name + " at Function " + Stub_Function_name)
                                         
                                 Instance_flag = 0
                                 CHECK_count = 0
@@ -442,3 +448,9 @@ def getInstanceName(LineofCode):
 
 
 #################################################
+
+def print_writetoReport(content):
+    print(content)
+    report_Script.write(content)
+
+main_Script()
