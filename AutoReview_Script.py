@@ -5,7 +5,7 @@ from datetime import datetime
 
 
 def main_Script():
-    dir = "C:/Users/tuanp/Desktop/New folder/AutoReview_Spec/TestAppl"
+    dir = "C:Users/tuanp/Desktop/AutoReview/test"
     
     global report_Script
     report_name = getReportName(dir)
