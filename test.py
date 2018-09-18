@@ -1,15 +1,17 @@
 import os
 import re
 from datetime import datetime
+from git import Repo
+from pathlib import Path
 #################################################
 
 
 def main_Script():
-    dir = "C:/Users/tuanp/Desktop/New folder/AutoReview_Spec/TestAppl"
+    dir = "C:/Users/tuanp/Desktop/AutoReview/test/rba"
     
     global report_Script
     report_name = getReportName(dir)
-    #report_Script = open(report_name, "w")
+    # #report_Script = open(report_name, "w")
 
     directory_Script = dir + "/02_TestScript/"
     list_dir_TestScript_files = findAllTestScripts(directory_Script)
@@ -28,7 +30,7 @@ def main_Script():
         print("Checking file " + Cfile_name + "...")
         checkTestScript_ConventionName(Cfile_name)
         checkTestCase_ConventionName(dir_TestScript_file)
-        # print("\n\n\n*********************************************************\n\n\n")
+        print("\n\n\n*********************************************************\n\n\n")
 
     #report_Script.close()
 
@@ -37,18 +39,18 @@ def main_Script():
 def getReportName(dir):
     #get current active branch
     try:
-        active_branch = str(Repo(dir).active_branch)
+        repo = Repo(dir, search_parent_directories=True)
+        active_branch = str(repo.active_branch)
     except Exception as e:
         print("Cannot find current active branch in git")
         active_branch = 'defaultbranch'
     
     #get datetime
-    time = str(datetime.now().strftime("%H%M%S") + '.txt')
-    #print(time)
+    time = str(datetime.now().strftime("%H%M%S"))
 
     #Report name
     report_name = "ReviewReport_TestScript_" + active_branch + "_" + time + ".txt"
-    
+
     return report_name
 
 #################################################
@@ -56,8 +58,8 @@ def getReportName(dir):
 
 def findAllTestScripts(directory_Script):
     list_dir_Cfiles = []
-    
     for root, dirs, Files in os.walk(directory_Script):
+
         check_tests = re.search('tests', root)
         if (check_tests):
             for filename in Files:
@@ -145,6 +147,7 @@ def checkTestCase_format(all_codes, list_TestCases):
 
     for LineofCode in all_codes:
         line_counter += 1
+        lower_LineofCode = LineofCode.lower()
         if (LineofCode.find('/* Call Interface Control') != -1):
             return Stub_Functions_list
 
@@ -157,103 +160,16 @@ def checkTestCase_format(all_codes, list_TestCases):
                 First_TC_check = 1
 
         if (Begin_TC_flag == 1):
+            for element_to_check in list_to_check:
+                if (re.search(element_to_check.lower(), lower_LineofCode)):
+                    list_checked.append(element_to_check)
+                    break
 
-            # Check Test Method #
-            if ((LineofCode.find('Test Method') != -1) or (LineofCode.find('Test method') != -1)):
-                list_checked.append("Test Method")
-            ##########################
-
-            # Check Tester define #
-            if ((LineofCode.find('Tester define') != -1) or (LineofCode.find('Tester Define') != -1)):
-                list_checked.append("Tester define")
+            if (re.search("tester define", lower_LineofCode)):
                 Tester_Define_flag = 1
-
             if (Tester_Define_flag == 1):
-                if ((LineofCode.find('INITIALISE') == -1) and (LineofCode.find('_entity') != -1)):
-                    var_Declare = LineofCode.strip()
-                    try:
-                        space_index = var_Declare.index(' ')
-                        var_Declare = var_Declare[space_index+1:-1]
-                        list_Tester_Define_Declaration.append(var_Declare)
-                    except:
-                        pass
-
-                if ((LineofCode.find('INITIALISE') != -1) and (LineofCode.find('_entity') != -1)):
-                    var_Init = LineofCode.strip()
-                    var_Init = var_Init[11:-2]
-                    list_Tester_Define_Init.append(var_Init)
-
-                if ((LineofCode.find('/*') != -1) and (LineofCode.find('*/') != -1) and (LineofCode.find('Tester define') == -1)):
-                    for var_defined in list_Tester_Define_Declaration:
-                        if var_defined not in list_Tester_Define_Init:
-                            print("\n- WARNING: " + var_defined + " was not INITIALISED")
-                            
+                if (check_content_Tester_define(LineofCode, list_Tester_Define_Declaration, list_Tester_Define_Init)):
                     Tester_Define_flag = 0
-
-            ##########################
-
-            # Check Test case data declarations #
-            if (LineofCode.find('Test case data declarations') != -1):
-                list_checked.append("Test case data declarations")
-
-            if (LineofCode.find('Set global data') != -1):
-                list_checked.append("Set global data")
-
-            if (LineofCode.find('initialise_global_data()') != -1):
-                list_checked.append("initialise_global_data()")
-
-            if (LineofCode.find('Set expected values for global data checks') != -1):
-                list_checked.append("Set expected values for global data checks")
-
-            if (LineofCode.find('initialise_expected_global_data()') != -1):
-                list_checked.append("initialise_expected_global_data()")
-
-            if (LineofCode.find('Expected Call Sequence') != -1):
-                list_checked.append("Expected Call Sequence")
-
-            # Expected Calls #
-            if (LineofCode.find('EXPECTED_CALLS') != -1):
-                list_checked.append("EXPECTED_CALLS")
-                Expected_Calls_flag = 1
-
-            if (Expected_Calls_flag == 1):
-                if ((LineofCode.find('"') != -1) and LineofCode.find('#') != -1):
-                    first_index = LineofCode.index('"')
-                    second_index = LineofCode.index(';')
-                    function_name = LineofCode[first_index + 1:second_index]
-                    check = 0
-                    if (len(Stub_Functions_list) == 0):
-                        Stub_Functions_list.append(function_name)
-                    else:
-                        for i in range(len(Stub_Functions_list)):
-                            if (function_name == Stub_Functions_list[i]):
-                                check = 1
-                                break
-                        if (check == 0):
-                            Stub_Functions_list.append(function_name)
-
-                if (LineofCode.find(');') != -1):
-                    Expected_Calls_flag = 0
-
-            ##################
-
-            if (LineofCode.find('Call SUT') != -1):
-                list_checked.append("Call SUT")
-
-            if (LineofCode.find('Test case checks') != -1):
-                list_checked.append("Test case checks")
-
-            if ((LineofCode.find('Expected Result') != -1) or (LineofCode.find('Expected result') != -1)):
-                list_checked.append("Expected Result")
-
-            if (LineofCode.find('Checks on global data') != -1):
-                list_checked.append("Checks on global data")
-
-            if (LineofCode.find('check_global_data()') != -1):
-                list_checked.append("check_global_data()")
-
-            if (LineofCode.find('GUID') != -1):
-                list_checked.append("GUID")
 
             #####################################
 
@@ -264,17 +180,40 @@ def checkTestCase_format(all_codes, list_TestCases):
                         print("\n- WARNING: Lack of " + tocheck)
 
                 print("\n")
-
-                list_Tester_Define_Declaration = []
-                list_Tester_Define_Init = []
                 Begin_TC_flag = 0
                 Tester_Define_flag = 0
+                list_Tester_Define_Declaration = []
+                list_Tester_Define_Init = []
 
             ##########################
 
 
 #################################################
 
+def check_content_Tester_define(lineofcode, list_Tester_Define_Declaration, list_Tester_Define_Init):
+    
+    if ((lineofcode.find('INITIALISE') == -1) and (lineofcode.find('_entity') != -1)):
+        var_Declare = lineofcode.strip()
+        try:
+            space_index = var_Declare.index(' ')
+            var_Declare = var_Declare[space_index+1:-1]
+            list_Tester_Define_Declaration.append(var_Declare)
+        except:
+            pass
+
+    if ((lineofcode.find('INITIALISE') != -1) and (lineofcode.find('_entity') != -1)):
+        var_Init = lineofcode.strip()
+        var_Init = var_Init[11:-2]
+        list_Tester_Define_Init.append(var_Init)
+
+    if ((lineofcode.find('/*') != -1) and (lineofcode.find('Tester') == -1)):
+        for var_defined in list_Tester_Define_Declaration:
+            if var_defined not in list_Tester_Define_Init:
+                print("\n- WARNING: " + var_defined + " was not INITIALISED")
+
+        return 1
+
+#################################################              
 
 def check_Stub_Functions(all_codes, Stub_Functions_list):
     print("\nChecking Stub & Isolate Functions...")
